@@ -1,0 +1,92 @@
+Question 1:
+#Import CSV
+> abvTest<-read.csv("C:/Users/glassmanm/Documents/beerreviews/beerreviews.csv", header = TRUE, sep = ",", quote = "\"", dec = ".", fill = TRUE, comment.char = "",)
+
+#Sort based on ABV highest to lowest
+> sort1.abvTest <- abvTest[order(-abvTest$beer_abv) , ]
+
+#Display first row of sorted table
+> sort1.abvTest[1, ]
+      brewery_id  brewery_name review_time review_overall review_aroma review_appearance review_profilename beer_style
+12920       6513 SchorschbrÃ¤u  1316780901              4            4                 4        kappldav123    Eisbock
+      review_palate review_taste                      beer_name beer_abv beer_beerid
+12920             4          3.5 SchorschbrÃ¤u Schorschbock 57%     57.7       73368
+>
+
+
+Question 2:
+#Filter to only the best type of beer (American Brown Ale)
+> bestBeers <- subset(abvTest, abvTest$beer_style == "American Brown Ale")
+
+#Sort highest to lowest by overall rating
+> bestBeers.sort1 <- bestBeers[order(-bestBeers$review_overall) , ]
+
+#Display the top 10
+
+> bestBeers.sort1[1:10 , ]
+      brewery_id               brewery_name review_time review_overall review_aroma review_appearance review_profilename
+1986         850 Moon River Brewing Company  1217627049              5          3.5               4.0             Gavage
+12444       9020      Yazoo Brewing Company  1193390387              5          3.0               3.5      woodychandler
+12487       9020      Yazoo Brewing Company  1214866873              5          4.5               4.0         beamishman
+12544       9020      Yazoo Brewing Company  1297223256              5          4.0               4.5        Beertracker
+12554       9020      Yazoo Brewing Company  1288149604              5          3.5               4.0           sommersb
+16876       1199   Founders Brewing Company  1319952594              5          5.0               4.5         delmarnate
+16879       1199   Founders Brewing Company  1317665508              5          5.0               4.0           rhong187
+16880       1199   Founders Brewing Company  1316558620              5          5.0               3.5       TheDudeRules
+16881       1199   Founders Brewing Company  1316273152              5          5.0               4.5          Retail1LO
+16883       1199   Founders Brewing Company  1314410262              5          5.0               4.5        mikesgroove
+              beer_style review_palate review_taste                      beer_name beer_abv beer_beerid
+1986  American Brown Ale           5.0          4.5      Gene's American Brown Ale      6.0       44081
+12444 American Brown Ale           4.0          4.0                     Dos Perros      3.5       20893
+12487 American Brown Ale           4.0          4.5                     Dos Perros      3.5       20893
+12544 American Brown Ale           4.5          4.5                     Dos Perros      3.5       20893
+12554 American Brown Ale           4.0          4.0                     Dos Perros      3.5       20893
+16876 American Brown Ale           5.0          5.0 Founders Cashew Mountain Brown     10.0       69894
+16879 American Brown Ale           4.5          5.0 Founders Cashew Mountain Brown     10.0       69894
+16880 American Brown Ale           5.0          5.0 Founders Cashew Mountain Brown     10.0       69894
+16881 American Brown Ale           4.5          5.0 Founders Cashew Mountain Brown     10.0       69894
+16883 American Brown Ale           4.5          5.0 Founders Cashew Mountain Brown     10.0       69894
+
+
+Question 3:
+#I ran a simply correlation between the overall review score and each of the four review variables
+> cor(as.numeric(abvTest$review_overall),as.numeric(abvTest$review_aroma))
+[1] 0.6160131
+> cor(as.numeric(abvTest$review_overall),as.numeric(abvTest$review_taste))
+[1] 0.7898156
+> cor(as.numeric(abvTest$review_overall),as.numeric(abvTest$review_appearance))
+[1] 0.5017324
+> cor(as.numeric(abvTest$review_overall),as.numeric(abvTest$review_palate))
+[1] 0.7019139
+
+#Create visual of Overall vs Taste correlation
+> library(ggplot2)
+> theme_set(theme_bw())
+> g<- ggplot(abvTest, aes(as.numeric(abvTest$review_overall),as.numeric(abvTest$review_taste)))
+> g + geom_count(col="tomato3", show.legend=F) +labs(subtitle="Overall vs Taste", y="Overall", x="Taste",title="Correlation")
+
+Question 4:
+#Add Ranking column and multiply appearance and aroma ratings to create a ranking variable
+> abvTest <- cbind(abvTest, "rating")
+> abvTest$review_appearance <- as.numeric(abvTest$review_appearance)
+> abvTest$review_aroma <- as.numeric(abvTest$review_aroma)
+> abvTest$"rating"<-abvTest$review_appearance*abvTest$review_aroma
+
+#Summarize table based on the average ranking for each beer style
+> abvTest.dp <- abvTest %>%
++ group_by(abvTest$beer_style) %>%
++ summarise(mean =mean(rating), n = n())
+
+
+
+#Sort output table by average ranking value and display
+> abvTest.dp.sort1 <-abvTest.dp[order(-abvTest.dp$mean),]
+> abvTest.dp.sort1[1,]
+# A tibble: 1 x 3
+  `abvTest$beer_style`              mean     n
+  <fct>                            <dbl> <int>
+1 American Double / Imperial Stout  17.4 50705
+
+#Create visual
+> theme_set(theme_classic())
+> ggplot(abvTest.dp.sort1, aes(x=abvTest.dp.sort1$`abvTest$beer_style`,y=abvTest.dp.sort1$mean)) + geom_point(col="tomato3", size=3) + geom_segment(aes(x=abvTest.dp.sort1$`abvTest$beer_style`,xend=abvTest.dp.sort1$`abvTest$beer_style`,y=min(abvTest.dp.sort1$mean),yend=max(abvTest.dp.sort1$mean)), linetype="dashed", size=0.1) + labs(title="Beer Style and Ranking")+coord_flip()
